@@ -8,6 +8,7 @@ import districtRoutes from "./src/routes/districts.js";
 import packageRoutes  from "./src/routes/packages.js";
 import enquiryRoutes  from "./src/routes/enquiries.js";
 import authRoutes     from "./src/routes/auth.js";
+import heroSlideRoutes from "./src/routes/heroSlides.js";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -40,6 +41,7 @@ app.use("/api/auth",       authRoutes);
 app.use("/api/districts",  districtRoutes);
 app.use("/api/packages",   packageRoutes);
 app.use("/api/enquiries",  enquiryRoutes);
+app.use("/api/hero-slides", heroSlideRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err.message);
