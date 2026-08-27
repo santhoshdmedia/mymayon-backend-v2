@@ -9,7 +9,7 @@ const heroSlideSchema = new mongoose.Schema(
     ctaLink: { type: String, trim: true, default: "" }, // e.g. "/packages" or full URL
 
     image: {
-      url: { type: String, default: "" }, // full URL: http://localhost:5000/uploads/hero/filename.jpg
+      url: { type: String, default: "" }, // full URL: https://api.mymayon.com/uploads/hero/filename.jpg
       filename: { type: String, default: "" }, // stored disk filename — used for deletion
     },
 
