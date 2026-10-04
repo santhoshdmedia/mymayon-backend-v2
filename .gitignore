@@ -1,0 +1,4 @@
+node_modules/
+src/seed.js
+.env
+node_modules/

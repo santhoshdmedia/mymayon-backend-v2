@@ -2,10 +2,7 @@ import mongoose from "mongoose";
 
 export default async function connectDB() {
   // Accept either MONGO_URI or MONGODB_URI so both work
-  const uri =
-    process.env.MONGODB_URI ||
-    process.env.MONGO_URI ||
-    "mongodb://127.0.0.1:27017/mymayon";
+  const uri = "mongodb+srv://santhoshmkr0723:UpVFXPwYySxEGbXq@cluster0.a9xb5.mongodb.net/mymayon";
 
   try {
     await mongoose.connect(uri);

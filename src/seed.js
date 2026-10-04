@@ -9,6 +9,7 @@ dotenv.config({ path: resolve(__dirname, "../.env") });
 import connectDB from "./config/db.js";
 import District from "./models/District.js";
 import Package from "./models/Package.js";
+import { PDF_PACKAGES } from "./data/pdfPackagesData.js";
 
 // ─── Districts ────────────────────────────────────────────────────────────────
 const districts = [
@@ -29,6 +30,15 @@ const districts = [
     templeCount: 108, idealSeason: "Oct–Mar",
     overview: "The city of a thousand temples, silk weaving and timeless Pallava architecture.",
     highlights: ["Ekambareswarar Temple", "Kailasanathar Temple", "Varadharaja Perumal Temple"],
+    featured: true, isPublished: true,
+  },
+  {
+    name: "Chengalpattu", slug: "chengalpattu", tamilName: "செங்கல்பட்டு",
+    region: "Northern", presidingDeity: "Shore Temple & Stala Sayana Perumal",
+    faithCategories: ["Hindu", "Interfaith"], circuits: ["Pallava Heritage"],
+    templeCount: 35, idealSeason: "Nov–Feb",
+    overview: "Gateway to the UNESCO World Heritage monuments of Mamallapuram, pristine beaches, and bird sanctuaries.",
+    highlights: ["Shore Temple", "Five Rathas", "Arjuna's Penance", "Vedanthangal Bird Sanctuary"],
     featured: true, isPublished: true,
   },
   {
@@ -553,24 +563,43 @@ async function seed() {
     const insertedDistricts = await District.insertMany(districts);
     console.log(`✓ Seeded ${insertedDistricts.length} districts`);
 
-    // Build slug→ObjectId map for district references
-    const districtMap = {};
-    insertedDistricts.forEach((d) => { districtMap[d.slug] = d._id; });
+    // Build district lookup helper for slug and name matching
+    const aliases = {
+      pudukkottai: "pudukottai",
+      karaikudi: "sivaganga",
+      tirupathur: "tirupattur",
+      viluppuram: "villupuram",
+      tiruchirappalli: "trichy",
+    };
+
+    const districtLookup = (val) => {
+      if (!val) return null;
+      let target = String(val).toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+      if (aliases[target]) target = aliases[target];
+      const match = insertedDistricts.find(
+        (d) =>
+          d.slug.replace(/[^a-z0-9]/g, "") === target ||
+          d.name.toLowerCase().replace(/[^a-z0-9]/g, "") === target ||
+          d.name.toLowerCase().includes(target) ||
+          target.includes(d.slug.replace(/[^a-z0-9]/g, ""))
+      );
+      return match ? match._id : null;
+    };
 
     console.log("⏳ Clearing existing packages…");
     await Package.deleteMany({});
 
-    const pkgsWithDistrict = packages.map((p) => {
-      const slug = p.locationLabel.toLowerCase().trim().replace(/\s+/g, "-");
-      const districtId = districtMap[slug] || null;
+    const allCombined = [...packages, ...PDF_PACKAGES];
+    const pkgsWithDistrict = allCombined.map((p) => {
+      const districtId = districtLookup(p.districtQuery || p.locationLabel);
       if (!districtId) {
-        console.warn(`⚠ No matching district found for package "${p.title}" (locationLabel: "${p.locationLabel}", slug tried: "${slug}")`);
+        console.warn(`⚠ No matching district found for package "${p.title}" (locationLabel: "${p.locationLabel}")`);
       }
-      return { ...p, district: districtId };
+      return { ...p, district: districtId || undefined };
     });
 
     const insertedPackages = await Package.insertMany(pkgsWithDistrict);
-    console.log(`✓ Seeded ${insertedPackages.length} packages`);
+    console.log(`✓ Seeded ${insertedPackages.length} packages (${packages.length} curated + ${PDF_PACKAGES.length} district packages from PDF)`);
 
     console.log("========================================");
     console.log("✅ SEEDING FINISHED SUCCESSFULLY:", new Date().toISOString());
