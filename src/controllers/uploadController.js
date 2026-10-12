@@ -51,6 +51,7 @@ export async function uploadPackageImages(req, res) {
   }));
 
   pkg.images.push(...newImages);
+  pkg.images.forEach((im, idx) => { im.order = idx; });
   if (!pkg.heroImage && pkg.images.length > 0) pkg.heroImage = pkg.images[0].url;
   await pkg.save();
 
@@ -71,11 +72,16 @@ export async function deletePackageImage(req, res) {
   const img = pkg.images.id(req.params.imageId);
   if (!img) return res.status(404).json({ message: "Image not found" });
 
+  const wasHero = pkg.heroImage === img.url;
+
   // Remove file from disk
   removeFile(img.filename || path.basename(img.url));
 
   img.deleteOne();
-  pkg.heroImage = pkg.images.length > 0 ? pkg.images[0].url : "";
+  pkg.images.forEach((im, idx) => { im.order = idx; });
+  if (wasHero || !pkg.heroImage) {
+    pkg.heroImage = pkg.images.length > 0 ? pkg.images[0].url : "";
+  }
   await pkg.save();
 
   res.json({ message: "Image deleted", images: pkg.images, heroImage: pkg.heroImage });
@@ -94,10 +100,23 @@ export async function updatePackageImage(req, res) {
 
   if (req.body.caption !== undefined) img.caption = req.body.caption;
   if (req.body.order   !== undefined) img.order   = Number(req.body.order);
-  if (req.body.setHero)               pkg.heroImage = img.url;
+  if (req.body.setHero) {
+    pkg.heroImage = img.url;
+    // Set this hero image to order -1, then sort and re-index so hero is order 0
+    pkg.images.forEach(item => {
+      if (item._id.toString() === img._id.toString()) {
+        item.order = -1;
+      }
+    });
+    pkg.images.sort((a, b) => a.order - b.order);
+    pkg.images.forEach((item, idx) => {
+      item.order = idx;
+    });
+  } else {
+    // Re-sort by order after update
+    pkg.images.sort((a, b) => a.order - b.order);
+  }
 
-  // Re-sort by order after update
-  pkg.images.sort((a, b) => a.order - b.order);
   await pkg.save();
 
   res.json({ message: "Image updated", images: pkg.images, heroImage: pkg.heroImage });

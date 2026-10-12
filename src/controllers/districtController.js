@@ -1,4 +1,20 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import District from "../models/District.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function removeDistrictFile(filename) {
+  if (!filename) return;
+  const filePath = path.join(__dirname, "../../uploads/districts", path.basename(filename));
+  try { fs.unlinkSync(filePath); } catch {}
+}
+
+function fileUrl(req, filename) {
+  const base = process.env.SERVER_URL || `${req.protocol}://${req.get("host")}`;
+  return `${base}/uploads/districts/${filename}`;
+}
 
 export async function listDistricts(req, res) {
   const { region, featured, search, page = 1, limit = 50 } = req.query;
@@ -36,7 +52,48 @@ export async function updateDistrict(req, res) {
 }
 
 export async function deleteDistrict(req, res) {
-  const district = await District.findByIdAndDelete(req.params.id);
+  const district = await District.findById(req.params.id);
   if (!district) return res.status(404).json({ message: "District not found" });
+
+  if (district.imageFilename) {
+    removeDistrictFile(district.imageFilename);
+  }
+  await district.deleteOne();
   res.json({ message: "District deleted" });
+}
+
+export async function uploadDistrictImage(req, res) {
+  const district = await District.findById(req.params.id);
+  if (!district) {
+    if (req.file) removeDistrictFile(req.file.filename);
+    return res.status(404).json({ message: "District not found" });
+  }
+  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+  if (district.imageFilename) {
+    removeDistrictFile(district.imageFilename);
+  }
+
+  const url = fileUrl(req, req.file.filename);
+  district.heroImage = url;
+  district.coverImage = url;
+  district.imageFilename = req.file.filename;
+  await district.save();
+
+  res.status(201).json({ message: "District cover image uploaded", data: district });
+}
+
+export async function deleteDistrictImage(req, res) {
+  const district = await District.findById(req.params.id);
+  if (!district) return res.status(404).json({ message: "District not found" });
+
+  if (district.imageFilename) {
+    removeDistrictFile(district.imageFilename);
+  }
+  district.heroImage = "";
+  district.coverImage = "";
+  district.imageFilename = "";
+  await district.save();
+
+  res.json({ message: "District cover image removed", data: district });
 }

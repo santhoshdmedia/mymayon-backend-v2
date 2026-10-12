@@ -9,11 +9,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOAD_DIR = path.join(__dirname, "../../uploads/packages");
 const HERO_UPLOAD_DIR = path.join(__dirname, "../../uploads/hero");
 const GALLERY_UPLOAD_DIR = path.join(__dirname, "../../uploads/gallery");
+const DISTRICT_UPLOAD_DIR = path.join(__dirname, "../../uploads/districts");
 
 // Create folders if they don't exist
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 if (!fs.existsSync(HERO_UPLOAD_DIR)) fs.mkdirSync(HERO_UPLOAD_DIR, { recursive: true });
 if (!fs.existsSync(GALLERY_UPLOAD_DIR)) fs.mkdirSync(GALLERY_UPLOAD_DIR, { recursive: true });
+if (!fs.existsSync(DISTRICT_UPLOAD_DIR)) fs.mkdirSync(DISTRICT_UPLOAD_DIR, { recursive: true });
 
 const ALLOWED_MIME = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
@@ -76,3 +78,21 @@ export const uploadGallery = multer({
 });
 
 export const GALLERY_UPLOAD_DIR_PATH = GALLERY_UPLOAD_DIR;
+
+// ── District cover image uploads ────────────────────────────────────────────
+const districtStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, DISTRICT_UPLOAD_DIR),
+  filename: (_req, file, cb) => {
+    const ext  = path.extname(file.originalname).toLowerCase();
+    const name = `district-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+    cb(null, name);
+  },
+});
+
+export const uploadDistrict = multer({
+  storage: districtStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB per file
+  fileFilter,
+});
+
+export const DISTRICT_UPLOAD_DIR_PATH = DISTRICT_UPLOAD_DIR;
