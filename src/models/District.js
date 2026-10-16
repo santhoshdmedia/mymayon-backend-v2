@@ -15,8 +15,12 @@ const districtSchema = new mongoose.Schema(
     circuits: [{ type: String }], // e.g. "Arupadai Veedu", "Navagraha"
     templeCount: { type: Number, default: 0 },
     idealSeason: { type: String },
+    tagline: { type: String, default: "" },
     overview: { type: String },
+    experience: [{ type: String }],
     highlights: [{ type: String }],
+    inclusions: [{ type: String }],
+    whoIsThisFor: { type: String, default: "" },
     heroImage: { type: String, default: "" },
     coverImage: { type: String, default: "" },
     imageFilename: { type: String, default: "" },
@@ -27,6 +31,6 @@ const districtSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-districtSchema.index({ name: "text", presidingDeity: "text", overview: "text" });
+districtSchema.index({ name: "text", presidingDeity: "text", overview: "text", tagline: "text" });
 
 export default mongoose.model("District", districtSchema);

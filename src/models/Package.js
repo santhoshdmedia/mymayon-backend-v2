@@ -54,6 +54,8 @@ const packageSchema = new mongoose.Schema(
     stops: [stopSchema],
     inclusions: [{ type: String }],
     exclusions: [{ type: String }],
+    whoIsThisFor: { type: String, default: "" },
+    experience: [{ type: String }],
     faqs: [{ question: String, answer: String }],
     featured: { type: Boolean, default: false },
     isPublished: { type: Boolean, default: true },
